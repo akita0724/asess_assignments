@@ -5,8 +5,22 @@ from os import mkdir, path, listdir, cpu_count, getcwd
 from time import time
 from multiprocessing import Pool
 from shutil import move, which as shutil_which
-from openpyxl import Workbook
+from tkinter import Tk, messagebox, filedialog, ttk, LEFT, StringVar, E, W
 
+try:
+    from openpyxl import Workbook
+except:
+    raise EnvironmentError("Package 'openpyxl' not found.")
+
+tqdmUsable = False
+try:
+    from tqdm import tqdm
+    tqdmUsable = True
+except:
+    print("NOTICE")
+    print("Package 'tqdm' not installed. In order to show progress, please install it.")
+    print()
+    pass
 
 class JudgeProgram:
 
@@ -67,10 +81,6 @@ class JudgeProgram:
                     continue
 
         self.resultDir: str = input("Result Directory --> ")
-
-        # ディレクトリでない場合
-        # if path.isdir(self.resultDir) == False:
-        #     raise IsADirectoryError("Given string is not directory.")
 
         if path.isdir(self.resultDir) == False:
             mkdir(self.resultDir)
@@ -213,17 +223,8 @@ class JudgeProgram:
 
     def writeReport(self) -> None:
         wb = Workbook()
-        wb.create_sheet("判定結果一覧", 0)
-        wb_result = wb["判定結果一覧"]
 
-        wb_result.cell(1, 1, "学籍番号")
-        wb_result.cell(1, 2, "判定結果")
-        wb_result.cell(1, 3, "平均実行時間(ms)")
-        for r, row in enumerate(self.report):
-            for c, cell in enumerate(row):
-                wb_result.cell(r + 2, c + 1, cell)
-
-        wb.create_sheet("判定詳細", 1)
+        wb.create_sheet("判定詳細", 0)
         wb_detail = wb["判定詳細"]
         wb_detail.cell(1, 1, "判定ID")
         wb_detail.cell(1, 2, "判定結果")
@@ -233,11 +234,26 @@ class JudgeProgram:
             for c, cell in enumerate(row):
                 wb_detail.cell(r + 2, c + 1, cell)
 
+
+        wb.create_sheet("判定結果一覧", 1)
+        wb_result = wb["判定結果一覧"]
+
+        wb_result.cell(1, 1, "学籍番号")
+        wb_result.cell(1, 2, "判定結果")
+        wb_result.cell(1, 3, "平均実行時間(ms)")
+        for r, row in enumerate(self.report):
+            for c, cell in enumerate(row):
+                wb_result.cell(r + 2, c + 1, cell)
+        
+        
+        wb.save(path.join(self.resultDir, "result.xlsx"))
+        del wb
+
     def main(self) -> None:
         self.getStdIn(path.join(getcwd(), "stdin.csv"))
         self.getAnswer(path.join(getcwd(), "answer.csv"))
 
-        print("Judge start.")
+        print("Judge started.")
         for i, fileName in enumerate(self.fileNames):
             self.judgeFile(fileName, i + 1)
 
@@ -245,7 +261,7 @@ class JudgeProgram:
 
         self.writeReport()
 
-        print("")
+        print("Report created.")
 
 
 if __name__ == "__main__":
