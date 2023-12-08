@@ -27,6 +27,7 @@ class JudgeProgram:
 
     report = []
     reportDetail = []
+    regex = "[1-3][0-9][0-4][0-9]"
 
     def __init__(self) -> None:
 
@@ -189,22 +190,24 @@ class JudgeProgram:
         else:
             return [judgeId, 2, stderr, exe_time]
 
-    def processL(self, fileName: str, fileTo: str, ave_exe: float, status: str) -> None:
+    def processL(self, fileName: str, fileTo: str, ave_exe: float, status: str, testStatus:list[int) -> None:
 
         copy_file(path.join(self.AssignfolderName, fileName),
                   path.join(self.resultDir, fileTo, fileName))
 
         fileSize = path.getsize(path.join(self.AssignfolderName, fileName))
 
-        self.report.append([self.getStudentNumber(
-            fileName), status, ave_exe, fileSize])
+        report = [self.getStudentNumber(
+            fileName), status, ave_exe, fileSize]
+        report.extend(testStatus)
+        
+        self.report.append(report)
 
     def getStudentNumber(self, fileName: str) -> str:
         def verify_number(number: str) -> tuple[bool, str]:
-            match = findall("[1-3][0-9][0-4][0-9]", number)
+            match = findall(self.regex, number)
             match.append(number)
             return len(match) != 0, match[0]
-        print(fileName)
         candicate = []
         candicate.extend(fileName.split("_"))
         candicate.extend(fileName.split("-"))
@@ -250,7 +253,7 @@ class JudgeProgram:
         else:
             judgeStatus = "TLE"
 
-        self.processL(name, judgeStatus, ave_exe, judgeStatus)
+        self.processL(name, judgeStatus, ave_exe, judgeStatus, status)
 
     def moveUncheck(self) -> None:
         for fileName in self.file_unceked:
@@ -287,6 +290,10 @@ class JudgeProgram:
         wb_result.cell(1, 2, "判定結果")
         wb_result.cell(1, 3, "平均実行時間(ms)")
         wb_result.cell(1, 4, "ファイルサイズ(byte)")
+        wb_result.cell(1, 5, "AC")
+        wb_result.cell(1, 6, "WA")
+        wb_result.cell(1, 7, "RE")
+        wb_result.cell(1, 8, "TLE")
         for r, row in enumerate(self.report):
             for c, cell in enumerate(row):
                 wb_result.cell(r + 2, c + 1, cell)
@@ -300,7 +307,7 @@ class JudgeProgram:
 
         if self.stdInAmount != self.answerAmount:
             raise ValueError(
-                "The number of stdin and the number of answers do not match.")
+                "The number of stdin and that of answers must be the same.")
 
         print("Judge started.")
 
